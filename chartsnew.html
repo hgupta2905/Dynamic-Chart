@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Dynamic Chart</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/moment.js/2.13.0/moment.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.js"></script>
+  <script src="chartjs-plugin-dragdata.min.js"></script>
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    canvas {
+      background-color: #eee;
+      position: absolute;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="chartJSContainer" style="height: 90%; width: 90%;"></canvas>
+  <script>
+	var d = new Date();
+	var d1 = new Date(d.getFullYear(), d.getMonth(), d.getDay(), 0, 0, 0, 0);
+	var d2 = new Date(d.getFullYear(), d.getMonth(), d.getDay()+1, 0, 0, 0, 0);
+    var options = {
+      type: 'line',
+	  
+      data: {
+        datasets: [{
+            label: 'Price in USD',
+            data: [{
+                x: d1,
+                y: 0
+            },
+			{
+                x: d2,
+                y: 0
+            }
+			],
+            borderWidth: 1,
+			fill: false,
+            pointHitRadius: 25
+          }
+        ]
+      },
+      options: {
+		tooltipEvents: ["mousemove"],
+		responsive: true,
+		onClick: function (element, dataAtClick) {
+				var activePoints = dataAtClick;
+				if (dataAtClick.length) 
+					var r = confirm("Do you want to delete?");
+					if(r == true)
+					{
+						var scaleRef,
+							valueX,
+							valueY;
+						for (var scaleKey in this.scales) {
+							scaleRef = this.scales[scaleKey];
+							if (scaleRef.isHorizontal() && scaleKey == 'x-axis-0') {
+								valueX = scaleRef.getValueForPixel(element.offsetX);
+							} else if (scaleKey == 'y-axis-0') {
+								valueY = scaleRef.getValueForPixel(element.offsetY);
+							}
+						}
+						this.data.datasets.forEach((dataset) => {
+							var newdata = []
+							for (var i in dataset.data)
+							{	
+								var duration = moment.duration(moment(valueX).diff(moment(dataset.data[i]['x'])));
+								var x = duration.asMinutes();
+								if(Math.abs(valueY - dataset.data[i]['y'])>1 || Math.abs(x)>10)
+									newdata.push(dataset.data[i]);
+									//dataset.data.splice(dataset.data.indexOf(i), 1);
+									
+							}
+							dataset.data =newdata;
+							dataset.data.sort((a, b) => moment(b.x) - moment(a.x));
+						});
+						this.update();
+					}
+					
+				else 
+				{
+					var r = confirm("Add new Data Point?");
+					if(r==true) {
+						var scaleRef,
+							valueX,
+							valueY;
+						for (var scaleKey in this.scales) {
+							scaleRef = this.scales[scaleKey];
+							if (scaleRef.isHorizontal() && scaleKey == 'x-axis-0') {
+								valueX = scaleRef.getValueForPixel(element.offsetX);
+							} else if (scaleKey == 'y-axis-0') {
+								valueY = scaleRef.getValueForPixel(element.offsetY);
+							}
+						}
+						const insert = (arr, index, newItem) => [arr.slice(0, index),newItem,arr.slice(index)];
+						this.data.datasets.forEach((dataset) => {
+							
+							dataset.data.push({
+										x: valueX,
+										y: valueY.toFixed(2)
+									});
+							dataset.data.sort((a, b) => moment(b.x) - moment(a.x));
+						});
+						this.update();
+					}
+				}
+            },
+        scales: {
+          xAxes: [{
+                    type: "time",
+                    time: {
+                        parser: "HH:mm",
+                        unit: 'hour',
+                        unitStepSize: 2,
+                        displayFormats: {
+                            'minute': 'HH:mm', 
+                            'hour': 'HH:mm'
+                        },
+                        tooltipFormat: 'HH:mm'
+                    },
+                    gridLines: {
+                        display: true
+                    }
+                }],
+				 yAxes: [{
+                ticks: {
+                    suggestedMin: 5,
+                    suggestedMax: 100
+                }
+            }],
+        },
+		
+        dragData: true,
+        dragDataRound: 1,
+        dragOptions: {
+          showTooltip: true
+        },
+        onDragStart: function(e) {
+          // console.log(e)
+        },
+        onDrag: function(e, datasetIndex, index, value) {
+          e.target.style.cursor = 'grabbing'
+          // console.log(datasetIndex, index, value)
+        },
+        onDragEnd: function(e, datasetIndex, index, value) {
+          e.target.style.cursor = 'default' 
+          // console.log(datasetIndex, index, value)
+        },
+        hover: {
+          onHover: function(e) {
+            const point = this.getElementAtEvent(e)
+            if (point.length) e.target.style.cursor = 'grab'
+            else e.target.style.cursor = 'default'
+          }
+        }
+      }
+    }
+
+    var ctx = document.getElementById('chartJSContainer').getContext('2d');
+    window.test = new Chart(ctx, options);
+  </script>
+</body>
+
+</html>
