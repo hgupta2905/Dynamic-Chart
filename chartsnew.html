@@ -5,7 +5,6 @@
   <meta charset="utf-8">
   <title>Dynamic Chart</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  
   <script src="http://cdnjs.cloudflare.com/ajax/libs/moment.js/2.13.0/moment.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.js"></script>
   <script src="chartjs-plugin-dragdata.min.js"></script>
@@ -24,11 +23,47 @@
 </head>
 
 <body>
-  <canvas id="chartJSContainer" style="height: 90%; width: 90%;"></canvas>
+	<center>
+	<button id="submitAnalyzeData" type="button" value="Save" onClick = "exportFunc(); return false;" style="cursor:pointer;border-radius: 5px;
+    padding: 7px;color:white;background-color:#012834;font-size:15px;width:100px;">Export Data
+            </button>
+			</center>
+			</br>
+			
+  <canvas id="chartJSContainer" style="height: 200px; width: 500px;"></canvas>
   <script>
+	
+	function exportFunc()
+	{
+		var ins = []
+		var insdata = "Time,Coins\r\n";
+		Chart.helpers.each(Chart.instances,function(instance){ins.push(instance)});
+		ins[0].data.datasets.forEach((dataset) => {
+							
+							for (var i in dataset.data)
+							{	
+								var a = (dataset.data[i]['x']).toDate().toString();
+								var b = dataset.data[i]['y'].toString();
+								if(b != '0')
+									insdata = insdata + a +',' + b + '\r\n';
+							}
+						});
+		var downloadLink = document.createElement("a");
+		var blob = new Blob(["\ufeff", insdata]);
+		var url = URL.createObjectURL(blob);
+		downloadLink.href = url;
+		downloadLink.download = "data.csv";
+
+		document.body.appendChild(downloadLink);
+		downloadLink.click();
+		document.body.removeChild(downloadLink);
+	}
+	
+	
+  
 	var d = new Date();
 	var d1 = new Date(d.getFullYear(), d.getMonth(), d.getDay(), 0, 0, 0, 0);
-	var d2 = new Date(d.getFullYear(), d.getMonth(), d.getDay()+1, 0, 0, 0, 0);
+	var d2 = new Date(d.getFullYear(), d.getMonth(), d.getDay()+2, 0, 0, 0, 0);
     var options = {
       type: 'line',
 	  
@@ -36,11 +71,11 @@
         datasets: [{
             label: 'Price in USD',
             data: [{
-                x: d1,
+                x: moment(d1),
                 y: 0
             },
 			{
-                x: d2,
+                x: moment(d2),
                 y: 0
             }
 			],
@@ -76,7 +111,7 @@
 							{	
 								var duration = moment.duration(moment(valueX).diff(moment(dataset.data[i]['x'])));
 								var x = duration.asMinutes();
-								if(Math.abs(valueY - dataset.data[i]['y'])>1 || Math.abs(x)>10)
+								if(Math.abs(valueY - dataset.data[i]['y'])>100 || Math.abs(x)>5)
 									newdata.push(dataset.data[i]);
 									//dataset.data.splice(dataset.data.indexOf(i), 1);
 									
@@ -123,7 +158,7 @@
                         unit: 'hour',
                         unitStepSize: 2,
                         displayFormats: {
-                            'minute': 'HH:mm', 
+                            'minute': 'HH:mm:', 
                             'hour': 'HH:mm'
                         },
                         tooltipFormat: 'HH:mm'
@@ -134,14 +169,15 @@
                 }],
 				 yAxes: [{
                 ticks: {
-                    suggestedMin: 5,
-                    suggestedMax: 100
+                    suggestedMin: 0,
+                    suggestedMax: 10000
                 }
             }],
         },
 		
         dragData: true,
-        dragDataRound: 1,
+        dragDataRound: 2,
+		dragX: true,
         dragOptions: {
           showTooltip: true
         },
