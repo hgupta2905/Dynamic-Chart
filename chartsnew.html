@@ -42,7 +42,7 @@
 							
 							for (var i in dataset.data)
 							{	
-								var a = (dataset.data[i]['x']).toDate().toString();
+								var a = moment((dataset.data[i]['x'])).toDate().toString();
 								var b = dataset.data[i]['y'].toString();
 								if(b != '0')
 									insdata = insdata + a +',' + b + '\r\n';
